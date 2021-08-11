@@ -1,9 +1,10 @@
-/* Summary reporter 
+/* Summary reporter
 
 Intended to be added to the default reporter.
 See README.md for installation.
 */
 const {relative} = require('path');
+const fs = require('fs');
 const chalk = require('chalk');
 const MARKER_FOR_STATUS = {
   passed: chalk.green('✓'),
@@ -18,14 +19,15 @@ const INDENT = '  ';
 
 class SummaryReporter {
   /**
-   * @param {*} globalConfig 
-   * @param {*} options 
+   * @param {*} globalConfig
+   * @param {*} options
    */
   constructor({rootDir}, {failuresOnly=true}={}) {
     this._rootDir = rootDir;
     this._failuresOnly = failuresOnly;
     this._indent = INDENT;
     this._path = [];
+    this.resultObj = {}
   }
 
   log(message) {
@@ -39,12 +41,21 @@ class SummaryReporter {
     for (let file of this.sortResults(results.testResults)) {
       if (this._failuresOnly && !file.numFailingTests) continue;
       this.resetPath();
-      this.log(fileStyle(relative(this._rootDir, file.testFilePath)));
+      this.log(fileStyle(relative(this._rootDir, file.testFilePath))); // file path: ui-tests/json.spec.both.ts
+      const relativeTestFilePath = relative(this._rootDir, file.testFilePath)
+      this.resultObj[`${relativeTestFilePath}`] = {}
       for (let {status, ancestorTitles, title} of file.testResults) {
         if (this._failuresOnly && status !== 'failed') continue;
-        this.printPath(ancestorTitles);
+        this.printPath(ancestorTitles); // "describe" title
         this.log(`${this._indent}${MARKER_FOR_STATUS[status]||status} ${titleStyle(title)}`);
+        this.resultObj[`${relativeTestFilePath}`][`${title}`] = false
       }
+      console.log(this.resultObj)
+      fs.writeFileSync('./testResultJson.json', JSON.stringify(this.resultObj), (err) => {
+        if (err) {
+          console.warn('jest-summary-reporter: Unable to write test results JSON', err);
+        }
+      });
     }
     this.log('');
   }
