@@ -28,8 +28,9 @@ class SummaryReporter {
     this._indent = INDENT;
     this._path = [];
     this.resultObj = {
-      testStartTime: new Date().toISOString(),
-      testEndTime: '',
+      startTime: new Date().toISOString(),
+      endTime: '',
+      results: {}
     }
   }
 
@@ -46,16 +47,21 @@ class SummaryReporter {
       this.resetPath();
       this.log(fileStyle(relative(this._rootDir, file.testFilePath))); // file path: ui-tests/json.spec.both.ts
       const relativeTestFilePath = relative(this._rootDir, file.testFilePath).replace('ui-tests/', '')
-      this.resultObj[`${relativeTestFilePath}`] = {}
-      this.resultObj.testEndTime = new Date().toISOString()
+
+      this.resultObj.results[`${relativeTestFilePath}`] = []
+      this.resultObj.endTime = new Date().toISOString()
       for (let {status, ancestorTitles, title} of file.testResults) {
         if (this._failuresOnly && status !== 'failed') continue;
         this.printPath(ancestorTitles); // "describe" title
         this.log(`${this._indent}${MARKER_FOR_STATUS[status]||status} ${titleStyle(title)}`);
-        this.resultObj[`${relativeTestFilePath}`][`${title}`] = status !== 'failed'
+        const testResult = {
+          describe: title,
+          success:  status !== 'failed'
+        }
+        this.resultObj.results[`${relativeTestFilePath}`].push(testResult)
       }
       console.log('**debug**')
-      console.log(this.resultObj)
+      console.log(JSON.stringify(this.resultObj, null, 2))
       console.log('----------')
       fs.writeFileSync('./testResultJson.json', JSON.stringify(this.resultObj), (err) => {
         if (err) {
