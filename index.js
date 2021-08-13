@@ -27,7 +27,10 @@ class SummaryReporter {
     this._failuresOnly = failuresOnly;
     this._indent = INDENT;
     this._path = [];
-    this.resultObj = {}
+    this.resultObj = {
+      testStartTime: new Date().toISOString(),
+      testEndTime: '',
+    }
   }
 
   log(message) {
@@ -42,15 +45,18 @@ class SummaryReporter {
       if (this._failuresOnly && !file.numFailingTests) continue;
       this.resetPath();
       this.log(fileStyle(relative(this._rootDir, file.testFilePath))); // file path: ui-tests/json.spec.both.ts
-      const relativeTestFilePath = relative(this._rootDir, file.testFilePath)
+      const relativeTestFilePath = relative(this._rootDir, file.testFilePath).replace('ui-tests/', '')
       this.resultObj[`${relativeTestFilePath}`] = {}
+      this.resultObj.testEndTime = new Date().toISOString()
       for (let {status, ancestorTitles, title} of file.testResults) {
         if (this._failuresOnly && status !== 'failed') continue;
         this.printPath(ancestorTitles); // "describe" title
         this.log(`${this._indent}${MARKER_FOR_STATUS[status]||status} ${titleStyle(title)}`);
-        this.resultObj[`${relativeTestFilePath}`][`${title}`] = false
+        this.resultObj[`${relativeTestFilePath}`][`${title}`] = status !== 'failed'
       }
+      console.log('**debug**')
       console.log(this.resultObj)
+      console.log('----------')
       fs.writeFileSync('./testResultJson.json', JSON.stringify(this.resultObj), (err) => {
         if (err) {
           console.warn('jest-summary-reporter: Unable to write test results JSON', err);
