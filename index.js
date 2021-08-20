@@ -27,10 +27,10 @@ class SummaryReporter {
     this._failuresOnly = failuresOnly;
     this._indent = INDENT;
     this._path = [];
+
     this.resultObj = {
       startTime: new Date().toISOString(),
-      endTime: '',
-      results: {}
+      suites: []
     }
   }
 
@@ -48,18 +48,23 @@ class SummaryReporter {
       this.log(fileStyle(relative(this._rootDir, file.testFilePath))); // file path: ui-tests/json.spec.both.ts
       const relativeTestFilePath = relative(this._rootDir, file.testFilePath).replace('ui-tests/', '')
 
-      this.resultObj.results[`${relativeTestFilePath}`] = []
-      this.resultObj.endTime = new Date().toISOString()
+      const suite = {
+        suiteName: relativeTestFilePath,
+        tests: [],
+      }
+
+      // this.resultObj.suites = []
       for (let {status, ancestorTitles, title} of file.testResults) {
         if (this._failuresOnly && status !== 'failed') continue;
         this.printPath(ancestorTitles); // "describe" title
         this.log(`${this._indent}${MARKER_FOR_STATUS[status]||status} ${titleStyle(title)}`);
-        const testResult = {
-          describe: title,
-          success:  status !== 'failed'
-        }
-        this.resultObj.results[`${relativeTestFilePath}`].push(testResult)
+        suite.tests.push({
+          describe: `${title}(${relativeTestFilePath.replace('spec.ts')})`,
+          success: status !== 'failed'
+        })
       }
+      this.resultObj.suites.push(suite)
+
       console.log('**debug**')
       console.log(JSON.stringify(this.resultObj, null, 2))
       console.log('----------')
