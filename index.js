@@ -30,6 +30,7 @@ class SummaryReporter {
 
     this.resultObj = {
       startTime: new Date().toISOString(),
+      ghaCheckRunUrl: process.env.GHA_CHECK_RUN_URL,
       suites: []
     }
   }
