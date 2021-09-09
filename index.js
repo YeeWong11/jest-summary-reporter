@@ -66,9 +66,9 @@ class SummaryReporter {
       }
       this.resultObj.suites.push(suite)
 
-      console.log('**debug**')
-      console.log(JSON.stringify(this.resultObj, null, 2))
-      console.log('----------')
+      // console.log('**debug**')
+      // console.log(JSON.stringify(this.resultObj, null, 2))
+      // console.log('----------')
       fs.writeFileSync('./testResultJson.json', JSON.stringify(this.resultObj), (err) => {
         if (err) {
           console.warn('jest-summary-reporter: Unable to write test results JSON', err);
